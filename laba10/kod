@@ -1,0 +1,129 @@
+#include <stdio.h>
+#include <string.h>
+#include <malloc.h>
+#include <stdlib.h>
+#pragma warning(disable : 4996)
+
+#define YES 1
+#define NO 0
+
+#define MAXLEN 1000 // максимальная длина строки
+#define NLINES 1000 // максимальное число строк
+
+int function(char **lines, int n);
+
+void main(void)
+{
+	FILE *fpin; // входной файл
+
+	int nlines; // число строк в файле
+	char **lines_ptr = NULL; // указатель на динамический массив
+	int npointers; // число указателей в одномерном массиве указателей в динамическом массиве
+	int i;
+
+	fpin = fopen("test.txt", "rt"); // открыть файл для чтения
+
+	if (fpin == NULL)
+		return; // ошибка при открытии файла заказать динамический массив указателей
+#if 0
+	lines_ptr = (char**)malloc(NLINES * sizeof(char*));
+	// обнулить массив указателей
+	memset(lines_ptr, 0, NLINES * sizeof(char*));
+#else
+	lines_ptr = (char**)calloc(NLINES, sizeof(char*));
+#endif
+
+	npointers = NLINES;
+	nlines = 0;
+
+	while (!feof(fpin)) // цикл до конца входного файла
+	{
+		char line[MAXLEN];
+		char *ptr = fgets(line, MAXLEN, fpin); // чтение строки
+		int len;
+
+		if (ptr == NULL)
+			break; // файл исчерпан
+
+		len = (int)strlen(line); // определить длину строки
+
+		if (nlines == npointers)
+		{
+			// динамический массив исчерпан
+			npointers += NLINES;// увеличить число указателей в массиве
+
+			lines_ptr = (char**)realloc(lines_ptr, npointers * sizeof(char*));// перезаказать память для массива указателей
+			memset(&lines_ptr[nlines], 0, NLINES * sizeof(char*));// обнулить новую часть массива указателе
+		}
+
+		lines_ptr[nlines] = (char*)malloc(len + 1);// заказать в памяти место для строки плюс один байт
+		strcpy(lines_ptr[nlines], line); // сохранить строку в динамическом массиве
+		nlines++;
+	}
+
+	function(lines_ptr, nlines);
+
+	// отказаться от памяти для строк
+	for (i = 0; i < nlines; i++)
+	{
+		puts(lines_ptr[i]);
+		if (lines_ptr[i] != NULL)
+			free(lines_ptr[i]);
+	}
+	// отказаться от динамического массива указателей
+	if (lines_ptr != NULL)
+		free(lines_ptr);
+
+	fclose(fpin); // закрыть входной файл
+
+	system("test.txt");
+	system("result.txt");
+}
+
+int function(char **lines, int n)
+{
+	FILE *fpres;
+	int i, j, prev_str, prev_len, during_len;
+
+	fpres = fopen("result.txt", "wt");
+
+	fputs(lines[0], fpres); // нулевая строка
+
+	for (i = 1; i < n; i++) // цикл по строкам
+	{
+
+#if 0
+		char *during_ptr = *(lines + i); // указатель на текущую строку
+#else
+		char *during_ptr = lines[i]; // указатель на текущую строку
+#endif
+		during_len = (int)strlen(lines[i]);
+
+		int counter = 0;
+
+		for (prev_str = 0; prev_str < i; prev_str++)
+		{
+			prev_len = (int)strlen(lines[prev_str]);
+			char *prev_ptr = lines[prev_str];
+
+			if (during_len == prev_len)
+			{
+				for (j = 0; (prev_ptr[j] == during_ptr[j]) && (j < during_len); j++); //совпали? -> переходим на новую "текущую" строку
+
+				if (j == during_len)
+					break;
+				else
+					if (prev_str == (i - 1))
+					{
+						fputs(lines[i], fpres);
+						break;
+					}
+			}
+			else
+				if (prev_str == (i - 1)) // если их длины не равны и это предпоследняя строка, то записываем её в файл
+					fputs(lines[i], fpres);
+		}
+	}
+	fclose(fpres);
+	return 0;
+}
