@@ -1,0 +1,115 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <windows.h>
+#pragma warning (disable : 4996)
+
+#define MAXLEN 200
+#define NLINES 150
+#define YES 1
+#define NO 0
+// функция записи файла в массив
+
+int filling_tmp(char t[][MAXLEN])
+{
+	FILE *fpin;
+
+	int counter = 0;
+
+	fpin = fopen("test.txt", "rt");
+
+	while (!feof(fpin))
+	{
+		fgets(t[counter], MAXLEN, fpin);
+		counter++;
+	}
+	counter -= 1;
+	return counter;
+
+	fclose(fpin);
+}
+
+void main(void)
+{
+	HANDLE hStdout;
+	FILE *fpin;
+	char tmp[NLINES][MAXLEN];
+	int nline; // номер строки в массиве
+	int num_of_lines; // количество строк в файле
+	int b_open = 0, b_close = 0; // количество открывающихся и закрывающихся скобок '{', '}'
+	int flag = NO; // признак функции
+	int beg_f = 0, end_f = 0; // границы заголовка функции
+
+
+	WORD foregroundColor; // цвет слов
+	WORD backgroundColor; // цвет фона
+
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE); // получить стандартный дескриптор
+
+	foregroundColor = FOREGROUND_INTENSITY | FOREGROUND_RED;
+	backgroundColor = BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN |        BACKGROUND_RED;
+
+	num_of_lines = filling_tmp(tmp); //функция возвращает значение количества строк
+
+	printf("Number of strings: %2d\n", num_of_lines);
+
+	
+
+
+
+
+
+
+
+       for (nline = 0; nline <= num_of_lines; nline++)
+	{
+		for (int k = 0; k < MAXLEN; k++)
+		{
+			if (tmp[nline][0] == '#')
+				break;
+
+			if (tmp[nline][k] == '{')
+				b_open++;
+
+			if (tmp[nline][k] == '}')
+				b_close++;
+
+			if (b_open == b_close) // поиск функции вне скобок
+			{
+				if (tmp[nline][k] == '(')
+				{
+					flag = YES;
+
+					beg_f = nline;
+
+					if (k == 0)
+						beg_f = nline - 1;
+
+					for (end_f; end_f < beg_f; end_f++)
+						puts(tmp[end_f]); // вывод на экран до начала функции
+
+SetConsoleTextAttribute(hStdout, foregroundColor |                                       backgroundColor);
+				}
+
+				if (flag == YES)
+				{
+					if (tmp[nline][k] == ')')
+					{
+						end_f = nline + 1;
+
+						for (beg_f; beg_f < end_f; beg_f++)
+							puts(tmp[beg_f]);//выводнаэкрандоконца функции
+
+						flag = NO;
+						SetConsoleTextAttribute(hStdout, 7);
+					}
+				}
+			}
+		}
+	}
+
+	for (end_f; end_f <= num_of_lines; end_f++)
+		puts(tmp[end_f]); // вывод на экран содержимого последней функции
+
+	system("test.txt");
+}
